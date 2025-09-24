@@ -431,10 +431,22 @@ int fs_change_directory(const char* path) {
 }
 
 int fs_remove_directory(const char* dirname) {
+    // Validate directory name
+    if (!dirname || strlen(dirname) == 0) {
+        vga_puts("Error: Invalid directory name.\n");
+        return -1;
+    }
+    
     // Find directory in current directory
     int child = fs.files[fs.current_directory].first_child_index;
     while (child != -1) {
-        if (strcmp(fs.files[child].name, dirname) == 0 && fs.files[child].is_directory) {
+        if (strcmp(fs.files[child].name, dirname) == 0) {
+            // Check if it's actually a directory
+            if (!fs.files[child].is_directory) {
+                vga_printf("Error: '%s' is not a directory.\n", dirname);
+                return -1;
+            }
+            
             // Check if directory is empty
             if (fs.files[child].first_child_index != -1) {
                 vga_printf("Error: Directory '%s' is not empty.\n", dirname);
@@ -446,6 +458,9 @@ int fs_remove_directory(const char* dirname) {
             
             // Mark as unused
             fs.files[child].used = 0;
+            fs.files[child].is_directory = 0;
+            fs.files[child].first_child_index = -1;
+            fs.files[child].next_sibling_index = -1;
             memset(fs.files[child].name, 0, MAX_FILENAME_LENGTH);
             
             vga_printf("Directory '%s' removed successfully.\n", dirname);
