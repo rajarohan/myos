@@ -1,16 +1,25 @@
-// src/kernel.c
+// src/kernel.c - Main kernel with file system
 #include <stdint.h>
-
-// VGA text mode buffer starts at 0xB8000
-volatile uint16_t* vga = (uint16_t*)0xB8000;
+#include "vga.h"
+#include "keyboard.h"
+#include "filesystem.h"
+#include "shell.h"
 
 void kmain(void) {
-    const char *msg = "Hello from MyOS kernel!";
-    for (int i = 0; msg[i] != 0; i++) {
-        vga[i] = (0x0F << 8) | msg[i]; // 0x0F = white text, black background
-    }
-
-    // Halt CPU
+    // Initialize VGA display
+    vga_init();
+    
+    // Initialize keyboard
+    keyboard_init();
+    
+    // Initialize file system
+    fs_init();
+    
+    // Initialize and run shell
+    shell_init();
+    shell_run();
+    
+    // This should never be reached, but just in case
     for (;;) {
         __asm__ volatile("hlt");
     }
