@@ -55,8 +55,11 @@ void shell_init(void) {
 }
 
 void shell_prompt(void) {
+    char current_path[MAX_PATH_LENGTH];
+    fs_get_current_path(current_path, MAX_PATH_LENGTH);
+    
     vga_set_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK);
-    vga_puts("myos> ");
+    vga_printf("myos:%s$ ", current_path);
     vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 }
 
@@ -134,6 +137,30 @@ void shell_execute_command(const char* command) {
         cmd_clear();
     } else if (strncmp(command, "info", 4) == 0) {
         cmd_info();
+    } else if (strncmp(command, "mkdir", 5) == 0) {
+        const char* dirname = skip_whitespace(find_next_arg(command));
+        if (strlen(dirname) > 0) {
+            cmd_mkdir(dirname);
+        } else {
+            vga_puts("Usage: mkdir <dirname>\n");
+        }
+    } else if (strncmp(command, "rmdir", 5) == 0) {
+        const char* dirname = skip_whitespace(find_next_arg(command));
+        if (strlen(dirname) > 0) {
+            cmd_rmdir(dirname);
+        } else {
+            vga_puts("Usage: rmdir <dirname>\n");
+        }
+    } else if (strncmp(command, "cd", 2) == 0) {
+        const char* path = skip_whitespace(find_next_arg(command));
+        if (strlen(path) > 0) {
+            cmd_cd(path);
+        } else {
+            // cd with no arguments goes to root
+            cmd_cd("/");
+        }
+    } else if (strncmp(command, "pwd", 3) == 0) {
+        cmd_pwd();
     } else {
         vga_printf("Unknown command: %s\n", command);
         vga_puts("Type 'help' for available commands.\n");
@@ -144,17 +171,24 @@ void cmd_help(void) {
     vga_set_color(VGA_COLOR_LIGHT_BROWN, VGA_COLOR_BLACK);
     vga_puts("Available commands:\n");
     vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
-    vga_puts("  help              - Show this help message\n");
+    vga_puts("File Operations:\n");
     vga_puts("  create <file>     - Create a new text file\n");
-    vga_puts("  list, ls          - List all files\n");
     vga_puts("  read <file>       - Display file contents\n");
     vga_puts("  cat <file>        - Alias for read\n");
     vga_puts("  write <file>      - Write text to file\n");
     vga_puts("  edit <file>       - Alias for write\n");
     vga_puts("  delete <file>     - Delete a file\n");
     vga_puts("  rm <file>         - Alias for delete\n");
+    vga_puts("\nDirectory Operations:\n");
+    vga_puts("  mkdir <dir>       - Create a new directory\n");
+    vga_puts("  rmdir <dir>       - Remove an empty directory\n");
+    vga_puts("  cd <path>         - Change to directory (/, .., dir)\n");
+    vga_puts("  pwd               - Show current directory\n");
+    vga_puts("  list, ls          - List directory contents\n");
+    vga_puts("\nSystem Operations:\n");
     vga_puts("  clear             - Clear screen\n");
     vga_puts("  info              - Show file system info\n");
+    vga_puts("  help              - Show this help message\n");
 }
 
 void cmd_create(const char* filename) {
@@ -281,6 +315,55 @@ void cmd_clear(void) {
 
 void cmd_info(void) {
     fs_print_info();
+}
+
+void cmd_mkdir(const char* dirname) {
+    // Extract just the directory name
+    char clean_dirname[MAX_FILENAME_LENGTH];
+    int i = 0;
+    while (dirname[i] && dirname[i] != ' ' && dirname[i] != '\t' && i < MAX_FILENAME_LENGTH - 1) {
+        clean_dirname[i] = dirname[i];
+        i++;
+    }
+    clean_dirname[i] = '\0';
+    
+    fs_create_directory(clean_dirname);
+}
+
+void cmd_rmdir(const char* dirname) {
+    // Extract just the directory name
+    char clean_dirname[MAX_FILENAME_LENGTH];
+    int i = 0;
+    while (dirname[i] && dirname[i] != ' ' && dirname[i] != '\t' && i < MAX_FILENAME_LENGTH - 1) {
+        clean_dirname[i] = dirname[i];
+        i++;
+    }
+    clean_dirname[i] = '\0';
+    
+    fs_remove_directory(clean_dirname);
+}
+
+void cmd_cd(const char* path) {
+    // Extract just the path
+    char clean_path[MAX_PATH_LENGTH];
+    int i = 0;
+    while (path[i] && path[i] != ' ' && path[i] != '\t' && i < MAX_PATH_LENGTH - 1) {
+        clean_path[i] = path[i];
+        i++;
+    }
+    clean_path[i] = '\0';
+    
+    if (fs_change_directory(clean_path) == 0) {
+        char current_path[MAX_PATH_LENGTH];
+        fs_get_current_path(current_path, MAX_PATH_LENGTH);
+        vga_printf("Changed to directory: %s\n", current_path);
+    }
+}
+
+void cmd_pwd(void) {
+    char current_path[MAX_PATH_LENGTH];
+    fs_get_current_path(current_path, MAX_PATH_LENGTH);
+    vga_printf("%s\n", current_path);
 }
 
 void shell_run(void) {

@@ -21,5 +21,9 @@ void cmd_write(const char* filename);
 void cmd_delete(const char* filename);
 void cmd_clear(void);
 void cmd_info(void);
+void cmd_mkdir(const char* dirname);
+void cmd_rmdir(const char* dirname);
+void cmd_cd(const char* path);
+void cmd_pwd(void);
 
 #endif

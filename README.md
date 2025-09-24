@@ -15,8 +15,11 @@ MyOS is a simple, educational operating system kernel written in C and Assembly 
 - **Keyboard driver** with full US QWERTY layout support
 
 ### 📁 File System
-- **Custom in-memory file system** with up to 32 files
+- **Hierarchical directory system** with Unix-like structure
 - **File operations**: create, read, write, delete, and list files
+- **Directory operations**: mkdir, rmdir, cd, pwd navigation
+- **Path resolution**: support for absolute (/) and relative (.., .) paths
+- **Custom in-memory file system** with up to 64 files and directories
 - **Text file support** with up to 1KB per file
 - **Real-time file management** through interactive commands
 
@@ -33,37 +36,57 @@ MyOS is a simple, educational operating system kernel written in C and Assembly 
 Make sure you have the following tools installed:
 
 - **Cross-compiler toolchain**: `x86_64-elf-gcc` and `x86_64-elf-ld`
-- **GRUB tools**: `i686-elf-grub-mkrescue`
-- **QEMU**: `qemu-system-i386` for emulation
-- **Homebrew** (on macOS) for easy installation
+- **GRUB tools**: `i686-elf-grub-mkrescue` for bootable ISO creation
+- **QEMU**: `qemu-system-i386` for OS testing and emulation
+- **Make**: Build automation tool
+- **Homebrew** (on macOS) for package management
 
 ### Installation on macOS
 
 ```bash
 # Install cross-compilation tools
-brew install x86_64-elf-gcc qemu i686-elf-grub
+brew install x86_64-elf-gcc qemu grub
+
+# Verify installation
+x86_64-elf-gcc --version
+qemu-system-i386 --version
+i686-elf-grub-mkrescue --version
 
 # Clone and build the project
 git clone https://github.com/rajarohan/myos.git
 cd myos
+
+# Build and run in one command
 make run
 ```
 
 ### Building and Running
 
 ```bash
-# Build the OS
+# Build the OS kernel
 make
 
-# Create bootable ISO
+# Create bootable ISO image
 make kernel.iso
 
-# Run in QEMU emulator
+# Run in QEMU emulator (recommended)
 make run
 
-# Clean build artifacts
+# Clean all build artifacts
 make clean
+
+# Force rebuild everything
+make clean && make run
 ```
+
+### Build Process Details
+
+The build system:
+1. Compiles C source files with the cross-compiler (`x86_64-elf-gcc`)
+2. Assembles the boot code (`boot.S`) for multiboot compliance
+3. Links everything using the custom linker script (`linker.ld`)
+4. Creates a GRUB-bootable ISO image with `i686-elf-grub-mkrescue`
+5. Launches the OS in QEMU emulator
 
 ## Usage
 
@@ -74,10 +97,19 @@ Once MyOS boots, you'll see the interactive shell with the prompt `myos>`. Here 
 | Command | Alias | Description | Example |
 |---------|-------|-------------|---------|
 | `create <file>` | - | Create a new text file | `create hello.txt` |
-| `list` | `ls` | List all files | `list` |
 | `read <file>` | `cat` | Display file contents | `read hello.txt` |
 | `write <file>` | `edit` | Write text to file | `write hello.txt` |
 | `delete <file>` | `rm` | Delete a file | `delete hello.txt` |
+
+### Directory Management Commands
+
+| Command | Description | Example |
+|---------|-------------|---------|
+| `mkdir <dir>` | Create a new directory | `mkdir documents` |
+| `rmdir <dir>` | Remove an empty directory | `rmdir documents` |
+| `cd <path>` | Change directory (/, .., dirname) | `cd documents` |
+| `pwd` | Show current directory path | `pwd` |
+| `list` | `ls` | List directory contents | `list` |
 
 ### System Commands
 
@@ -93,39 +125,67 @@ Once MyOS boots, you'll see the interactive shell with the prompt `myos>`. Here 
 MyOS File System Shell v1.0
 ============================
 
+File system with directory support initialized successfully.
+
 Type 'help' for available commands.
 
-myos> create hello.txt
+myos:/$ mkdir documents
+Directory 'documents' created successfully.
+
+myos:/$ mkdir photos  
+Directory 'photos' created successfully.
+
+myos:/$ list
+Contents of /:
+Type Name                    Size (bytes)
+----------------------------------------
+DIR  documents               <DIR>
+DIR  photos                  <DIR>
+
+Total: 2 items
+
+myos:/$ cd documents
+Changed to directory: /documents
+
+myos:/documents$ create hello.txt
 File 'hello.txt' created successfully.
 
-myos> write hello.txt
+myos:/documents$ write hello.txt
 Enter text for file 'hello.txt' (press Ctrl+D or empty line to finish):
 Hello, World!
-This is my first file in MyOS!
+This is my first file in the documents folder!
 
-Data written to file 'hello.txt' (42 bytes).
+Data written to file 'hello.txt' (50 bytes).
 
-myos> list
-Files in file system:
-Name                    Size (bytes)
-------------------------------------
-hello.txt               42
+myos:/documents$ list
+Contents of /documents:
+Type Name                    Size (bytes)
+----------------------------------------
+FILE hello.txt               50
 
-Total: 1 files
+Total: 1 items
 
-myos> read hello.txt
+myos:/documents$ read hello.txt
 Contents of 'hello.txt':
 --- BEGIN FILE ---
 Hello, World!
-This is my first file in MyOS!
+This is my first file in the documents folder!
 --- END FILE ---
 
-myos> info
+myos:/documents$ cd ..
+Changed to directory: /
+
+myos:/$ pwd
+/
+
+myos:/$ info
 
 File System Information:
-Files: 1/32
-Data used: 42/32768 bytes
-Free space: 32726 bytes
+Current Directory: /
+Total entries: 3/64
+Directories: 2, Files: 1
+Data used: 50/65536 bytes
+Free space: 65486 bytes
 ```
 
 ## Architecture
@@ -137,14 +197,14 @@ myos/
 ├── src/
 │   ├── kernel.c        # Main kernel entry point
 │   ├── boot.S          # Assembly boot code with multiboot header
-│   ├── vga.c/h         # VGA text mode driver
-│   ├── keyboard.c/h    # Keyboard input driver
-│   ├── filesystem.c/h  # In-memory file system
-│   └── shell.c/h       # Interactive command shell
+│   ├── vga.c/h         # VGA text mode driver with color support
+│   ├── keyboard.c/h    # PS/2 keyboard input driver
+│   ├── filesystem.c/h  # Hierarchical in-memory file system
+│   └── shell.c/h       # Interactive command shell with directory support
 ├── boot/
 │   └── grub.cfg        # GRUB configuration
-├── linker.ld           # Linker script
-├── Makefile            # Build system
+├── linker.ld           # Linker script for memory layout
+├── Makefile            # Cross-compilation build system
 └── README.md           # This file
 ```
 
@@ -235,33 +295,76 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ### Common Issues
 
-**Error: `i386-elf-gcc: No such file or directory`**
+**Error: `x86_64-elf-gcc: No such file or directory`**
 ```bash
 # Install the cross-compiler toolchain
 brew install x86_64-elf-gcc
+# Verify installation
+which x86_64-elf-gcc
 ```
 
 **Error: `no multiboot header found`**
-- Ensure `boot.S` is compiled and linked first
-- Check that the linker script places `.multiboot` section at the beginning
+- Ensure `boot.S` contains the multiboot header magic numbers
+- Verify the linker script places `.multiboot` section at the beginning
+- Check that boot.o is the first object file in linking order
 
-**QEMU doesn't start**
+**Error: `i686-elf-grub-mkrescue: command not found`**
 ```bash
-# Make sure QEMU is installed
+# Install GRUB tools
+brew install grub
+# Verify GRUB installation
+i686-elf-grub-mkrescue --version
+```
+
+**QEMU doesn't start or crashes**
+```bash
+# Ensure QEMU is properly installed
 brew install qemu
-# Run with full path
-qemu-system-i386 -cdrom kernel.iso
+qemu-system-i386 --version
+
+# Run with explicit ISO path
+qemu-system-i386 -cdrom ./kernel.iso
+
+# Try with additional memory
+qemu-system-i386 -cdrom kernel.iso -m 256M
+```
+
+**Build fails with linker errors**
+```bash
+# Clean and rebuild
+make clean
+make
+
+# Check for missing object files
+ls -la *.o
 ```
 
 ### Debug Mode
 
-To run with debugging information:
+For development and debugging:
 ```bash
-# Run QEMU with monitor console
-qemu-system-i386 -cdrom kernel.iso -monitor stdio
+# Run QEMU with monitor console for debugging
+qemu-system-i386 -cdrom kernel.iso -monitor stdio -no-reboot
 
-# Add debug symbols during compilation
-CFLAGS += -g -DDEBUG make
+# Build with debug symbols
+make clean
+CFLAGS="-g -DDEBUG" make
+
+# Enable verbose output during build
+make V=1
+```
+
+### Performance Tuning
+
+```bash
+# Run with hardware acceleration (if available)
+qemu-system-i386 -cdrom kernel.iso -enable-kvm
+
+# Allocate more memory to the VM
+qemu-system-i386 -cdrom kernel.iso -m 512M
+
+# Use multiple CPU cores
+qemu-system-i386 -cdrom kernel.iso -smp 2
 ```
 
 ## Contact
