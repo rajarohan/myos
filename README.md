@@ -3,7 +3,7 @@
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Platform](https://img.shields.io/badge/platform-x86-lightgrey.svg)]()
 
-MyOS is a simple, educational operating system kernel written in C and Assembly that demonstrates fundamental OS development concepts. It features a custom in-memory file system with full text file management capabilities through an interactive shell interface.
+MyOS is a simple, educational operating system kernel written in C and Assembly that demonstrates fundamental OS development concepts. It features a custom in-memory hierarchical file system with full text file management capabilities through an interactive command-line shell interface.
 
 ## Features
 

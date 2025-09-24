@@ -2,7 +2,7 @@ CC=x86_64-elf-gcc
 LD=x86_64-elf-ld
 CFLAGS=-m32 -ffreestanding -nostdlib -fno-stack-protector -fno-pic -Wall -Wextra -Isrc
 
-SOURCES=src/kernel.c src/vga.c src/keyboard.c src/filesystem.c src/shell.c src/graphics.c src/window.c src/gui_app.c
+SOURCES=src/kernel.c src/vga.c src/keyboard.c src/filesystem.c src/shell.c
 OBJECTS=$(SOURCES:.c=.o)
 
 all: kernel.iso
