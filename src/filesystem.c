@@ -29,7 +29,38 @@ static void memcpy(void* dest, const void* src, uint32_t size) {
     uint8_t* d = (uint8_t*)dest;
     const uint8_t* s = (const uint8_t*)src;
     for (uint32_t i = 0; i < size; i++) {
-        d[i] = s[i];
+        *d++ = *s++;
+    }
+}
+
+// Simple integer to string conversion
+static void itoa(int value, char* buffer, int base) {
+    char* p = buffer;
+    char* p1, *p2;
+    int digits = 0;
+    
+    if (value < 0 && base == 10) {
+        *p++ = '-';
+        value = -value;
+    }
+    
+    do {
+        int remainder = value % base;
+        *p++ = (remainder < 10) ? remainder + '0' : remainder + 'a' - 10;
+        digits++;
+    } while (value /= base);
+    
+    *p = 0;
+    
+    // Reverse string (excluding sign)
+    p1 = (buffer[0] == '-') ? buffer + 1 : buffer;
+    p2 = p - 1;
+    while (p1 < p2) {
+        char tmp = *p1;
+        *p1 = *p2;
+        *p2 = tmp;
+        p1++;
+        p2--;
     }
 }
 
@@ -222,9 +253,12 @@ int fs_delete_file(const char* filename) {
 
 int fs_list_files(void) {
     char current_path[MAX_PATH_LENGTH];
+    char count_str[16];
     fs_get_current_path(current_path, MAX_PATH_LENGTH);
     
-    vga_printf("Contents of %s:\n", current_path);
+    vga_puts("Contents of ");
+    vga_puts(current_path);
+    vga_puts(":\n");
     vga_puts("Type Name                    Size (bytes)\n");
     vga_puts("----------------------------------------\n");
     
@@ -234,10 +268,31 @@ int fs_list_files(void) {
     while (child != -1) {
         if (fs.files[child].is_directory) {
             vga_set_color(VGA_COLOR_LIGHT_BLUE, VGA_COLOR_BLACK);
-            vga_printf("DIR  %-20s <DIR>\n", fs.files[child].name);
+            vga_puts("DIR  ");
+            vga_puts(fs.files[child].name);
+            
+            // Pad to 20 characters
+            int name_len = strlen(fs.files[child].name);
+            for (int i = name_len; i < 20; i++) {
+                vga_putchar(' ');
+            }
+            vga_puts(" <DIR>\n");
             vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
         } else {
-            vga_printf("FILE %-20s %d\n", fs.files[child].name, fs.files[child].size);
+            vga_puts("FILE ");
+            vga_puts(fs.files[child].name);
+            
+            // Pad to 20 characters
+            int name_len = strlen(fs.files[child].name);
+            for (int i = name_len; i < 20; i++) {
+                vga_putchar(' ');
+            }
+            vga_putchar(' ');
+            
+            // Convert size to string
+            itoa(fs.files[child].size, count_str, 10);
+            vga_puts(count_str);
+            vga_putchar('\n');
         }
         count++;
         child = fs.files[child].next_sibling_index;
@@ -246,7 +301,10 @@ int fs_list_files(void) {
     if (count == 0) {
         vga_puts("Directory is empty.\n");
     } else {
-        vga_printf("\nTotal: %d items\n", count);
+        vga_puts("\nTotal: ");
+        itoa(count, count_str, 10);
+        vga_puts(count_str);
+        vga_puts(" items\n");
     }
     
     return count;

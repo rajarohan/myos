@@ -144,9 +144,13 @@ static void itoa(int value, char* buffer, int base) {
     }
 }
 
+// Simplified printf implementation for kernel
 void vga_printf(const char* format, ...) {
     char buffer[32];
-    char* arg = (char*)&format + sizeof(format);
+    
+    // Get pointer to first argument
+    char** args = (char**)&format + 1;
+    int arg_count = 0;
     
     for (const char* p = format; *p != '\0'; p++) {
         if (*p != '%') {
@@ -154,29 +158,31 @@ void vga_printf(const char* format, ...) {
             continue;
         }
         
-        switch (*++p) {
+        p++; // Skip '%'
+        switch (*p) {
             case 'c':
-                vga_putchar(*(char*)arg);
-                arg += sizeof(char*);
+                vga_putchar((char)(int)args[arg_count++]);
                 break;
             case 's':
-                vga_puts(*(char**)arg);
-                arg += sizeof(char*);
+                vga_puts((char*)args[arg_count++]);
                 break;
-            case 'd':
-                itoa(*(int*)arg, buffer, 10);
+            case 'd': {
+                int num = (int)args[arg_count++];
+                itoa(num, buffer, 10);
                 vga_puts(buffer);
-                arg += sizeof(int);
                 break;
-            case 'x':
-                itoa(*(int*)arg, buffer, 16);
+            }
+            case 'x': {
+                int num = (int)args[arg_count++];
+                itoa(num, buffer, 16);
                 vga_puts(buffer);
-                arg += sizeof(int);
                 break;
+            }
             case '%':
                 vga_putchar('%');
                 break;
             default:
+                vga_putchar('%');
                 vga_putchar(*p);
                 break;
         }

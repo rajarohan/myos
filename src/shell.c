@@ -59,7 +59,9 @@ void shell_prompt(void) {
     fs_get_current_path(current_path, MAX_PATH_LENGTH);
     
     vga_set_color(VGA_COLOR_LIGHT_GREEN, VGA_COLOR_BLACK);
-    vga_printf("myos:%s$ ", current_path);
+    vga_puts("myos:");
+    vga_puts(current_path);
+    vga_puts("$ ");
     vga_set_color(VGA_COLOR_WHITE, VGA_COLOR_BLACK);
 }
 
