@@ -1,6 +1,5 @@
 # MyOS - A Simple Operating System with File System
 
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
 [![Platform](https://img.shields.io/badge/platform-x86-lightgrey.svg)]()
 
@@ -280,9 +279,6 @@ This project demonstrates key operating system concepts:
 - **Memory Management**: Allocation and addressing
 - **User Interfaces**: Command-line interaction design
 
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
@@ -371,7 +367,3 @@ qemu-system-i386 -cdrom kernel.iso -smp 2
 
 - **GitHub**: [@rajarohan](https://github.com/rajarohan)
 - **Project**: [MyOS Repository](https://github.com/rajarohan/myos)
-
----
-
-**Happy OS Development!** 🚀
